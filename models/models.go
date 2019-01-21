@@ -1,8 +1,3 @@
-//执行函数命令包
-//作者：bjlfp
-//邮箱：bjlfp@163.com
-//创建时间：2018-9-13
- 
 package models
  
 import (
