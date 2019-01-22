@@ -18,16 +18,16 @@ import (
   "os"
   "strings"
   "time"
-  "./models"
   "fmt"
   "path"
   "runtime"
   "flag"
   "log"
+  models "github.com/liyinda/AmrToMp3/pkg/models"
 )
 
 var (
-  filePath = flag.String("path", "./", "Audio Conversion Path")
+  filePath = flag.String("path", ".", "Audio Conversion Path")
   logFileName = flag.String("log", "audio.log", "Log File Name")
 )
  
