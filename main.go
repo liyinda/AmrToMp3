@@ -48,7 +48,7 @@ func arm2mp3_control() {
   //产品目录
   PRODUCTDIR := *filePath + "/audio/"
 
-  fmt.Println(PRODUCTDIR)
+  //fmt.Println(PRODUCTDIR)
 
   //获取cpu个数
   cpuNum := runtime.NumCPU()
@@ -57,7 +57,7 @@ func arm2mp3_control() {
   if filelist == nil {
     return
   }
-  fmt.Println("filelist =", filelist)
+  //fmt.Println("filelist =", filelist)
 
   //获取当前日期
   today := time.Now().Format("20060102")
