@@ -23,8 +23,8 @@ AmrToMp3基本功能是将amr或wav格式的音频文件通过转换成为音频
 
 ## 环境
 
-* [ffmpeg](http://ffmpeg.org/)
-* [docker](http://www.docker.com/)
+* [ffmpeg version 2.8.15](http://ffmpeg.org/)
+* [docker version 18.09.0](http://www.docker.com/)
 
 
 ## 下载
@@ -41,6 +41,7 @@ go build main.go
 ```
 ### build docker image
 ``` shell
+#go version 1.9.7
 make docker
 DOCKER 部署方式作者会尽快补充
 docker pull 空:latest
