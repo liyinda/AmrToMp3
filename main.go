@@ -20,7 +20,7 @@ import (
   "time"
   "fmt"
   "path"
-  //"runtime"
+  "runtime"
   "flag"
   "log"
   models "github.com/liyinda/AmrToMp3/pkg/models"
@@ -31,22 +31,7 @@ var (
   logFileName = flag.String("log", "audio.log", "Log File Name")
 )
 
-func putFile(fileChan chan string) {
-  //请求转换的工作目录
-  WORKDIR := *filePath + "/work/"
-  //备份目录
-  BAKDIR := *filePath + "/bak/"
-  //产品目录
-  PRODUCTDIR := *filePath + "/audio/"
-
-  //获取当前日期
-  today := time.Now().Format("20060102")
-  //初始化判断是否存在日期目录，如果没有生成对应生产目录
-  todaydir := PRODUCTDIR + today
-  models.MkDir(todaydir)
-  //初始化判断是否存在日期目录，如果没有生成对应备份目录 
-  todaybakdir := BAKDIR + today 
-  models.MkDir(todaybakdir)
+func putFile(fileChan chan string, WORKDIR string) {
 
   //将目录中的文件取出来放入管道fileChan 
   filelist := models.GetDirFiles(WORKDIR)
@@ -68,7 +53,8 @@ func audioConvert(fileChan chan string, amrChan chan string, exitChan chan bool)
   //产品目录
   PRODUCTDIR := *filePath + "/audio/"
   //获取当前日期
-  today := time.Now().Format("20060102")
+  TODAY := time.Now().Format("20060102")
+
   for {
     file, ok := <-fileChan
     if !ok {
@@ -76,8 +62,8 @@ func audioConvert(fileChan chan string, amrChan chan string, exitChan chan bool)
     }
     //获取文件的内容
     wfilepath := WORKDIR + file
-    bfilepath := BAKDIR + today + "/" + file
-    pfilepath := PRODUCTDIR + today + "/" + file
+    bfilepath := BAKDIR + TODAY + "/" + file
+    pfilepath := PRODUCTDIR + TODAY + "/" + file
 
     var rs bool
     var fileExt string
@@ -92,17 +78,14 @@ func audioConvert(fileChan chan string, amrChan chan string, exitChan chan bool)
         newfilepath = strings.Replace(wfilepath, ".amr", ".mp3", -1)
         comeAndTo := [...]string{wfilepath, newfilepath}
         rs = models.Arm2mp3(comeAndTo)
-        //log.Printf("%v Amr format conversion success \n", newfilepath)
       case fileExt == ".wav" :
         //进行wav到mp3的转换
         newfilepath = strings.Replace(wfilepath, ".wav", ".mp3", -1)
         comeAndTo := [...]string{wfilepath, newfilepath}
         rs = models.Arm2mp3(comeAndTo)
-        //log.Printf("%v Wav format conversion success \n", newfilepath)
       default:
         //os.Remove(wfilepath)
         os.Rename(wfilepath, bfilepath)
-        //log.Printf("%v conversion fail and backup \n", bfilepath)
     }
     if rs {
       //转换成功之后，将原始文件移动到备份目录
@@ -125,23 +108,40 @@ func main() {
   //调用运行参数
   flag.Parse()
 
+  //请求转换的工作目录
+  WORKDIR := *filePath + "/work/"
+  //备份目录
+  BAKDIR := *filePath + "/bak/"
+  //产品目录
+  PRODUCTDIR := *filePath + "/audio/"
+
   for {
+    //获取cpu数量
+    CPUNUM := runtime.NumCPU()
+    //获取当前日期
+    TODAY := time.Now().Format("20060102")
+    //初始化判断是否存在日期目录，如果没有生成对应生产目录
+    todaydir := PRODUCTDIR + TODAY
+    models.MkDir(todaydir)
+    //初始化判断是否存在日期目录，如果没有生成对应备份目录 
+    todaybakdir := BAKDIR + TODAY
+    models.MkDir(todaybakdir)
     //开启三个协程
     fileChan := make(chan string, 1000)
     amrChan := make(chan string, 2000)
-    exitChan := make(chan bool, 4)
+    exitChan := make(chan bool, CPUNUM)
   
     //将目录中文件放入管道fileChan中
-    go putFile(fileChan)
+    go putFile(fileChan, WORKDIR)
   
-    //开启4个协程，将fileChan中的文件名称取出放入amrChan中做转化，
+    //开启cpu核数个协程，将fileChan中的文件名称取出放入amrChan中做转化，
     //amrChan协程完成后放入exitChan安全退出
-    for i := 1; i <= 4; i++ {
+    for i := 1; i <= CPUNUM; i++ {
       go audioConvert(fileChan, amrChan, exitChan)
     }
   
     go func(){
-      for i := 1; i <= 4; i++ {
+      for i := 1; i <= CPUNUM; i++ {
         <-exitChan
       }
       close(amrChan)
@@ -168,9 +168,5 @@ func main() {
     }
     time.Sleep(1e9)
   }
-  //for {
-  //  amr2mp3_control()
-  //  time.Sleep(1e9)
-  //}
 }
  
